@@ -149,9 +149,22 @@ footer .credit b{color:var(--accent);font-weight:600}
     <div class="hud-card"><div class="hud-label">Hora</div><div class="hud-val mono" id="hudTime">—</div></div>
     <div class="hud-card">
       <div class="hud-label">Clima (manual)</div>
-      <div style="display:flex;gap:6px;align-items:center">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <select class="hud-select" id="climaIcon"><option>☀️</option><option>⛅</option><option selected>🌤️</option><option>🌧️</option><option>⛈️</option><option>🌫️</option></select>
-        <span class="hud-val" contenteditable="true" id="climaTxt">28°C, Maracaibo</span>
+        <select class="hud-select" id="climaCity">
+          <option>Maracaibo</option>
+          <option>Caracas</option>
+          <option>Valencia</option>
+          <option>Barquisimeto</option>
+          <option>Maracay</option>
+          <option>Ciudad Guayana</option>
+          <option>Puerto La Cruz</option>
+          <option>San Cristóbal</option>
+          <option>Punto Fijo</option>
+          <option value="OTRA">Otra ciudad…</option>
+        </select>
+        <span class="hud-val" contenteditable="true" id="climaCityCustom" style="display:none;min-width:70px">Ciudad</span>
+        <span class="hud-val mono" contenteditable="true" id="climaTemp">28°C</span>
       </div>
     </div>
   </div>
@@ -526,6 +539,12 @@ function tick(){
   document.getElementById('hudTime').textContent = d.toLocaleTimeString('es-VE');
 }
 setInterval(tick,1000);
+
+document.getElementById('climaCity').addEventListener('change', e=>{
+  const custom = document.getElementById('climaCityCustom');
+  if(e.target.value === 'OTRA'){ custom.style.display='inline-block'; custom.textContent='Ciudad'; custom.focus(); }
+  else{ custom.style.display='none'; }
+});
 
 function renderAll(){ renderKPIs(); renderProgress(); renderTable(); renderCompanySelect(); }
 loadData(); renderAll(); tick();
