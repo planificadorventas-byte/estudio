@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panel de Estudios ISO — FONDONORMA 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#050810; --bg2:#090D1A; --surface:rgba(16,22,40,.65); --surface-solid:#0D1224;
+  --ink:#E7F6FF; --ink-soft:#7C8DAE;
+  --line:rgba(110,220,255,.16); --line-strong:rgba(110,220,255,.35);
+  --accent:#2CF4D6; --accent-soft:rgba(44,244,214,.12);
+  --violet:#9B7BFF; --violet-soft:rgba(155,123,255,.14);
+  --blue:#4CC9FF; --blue-soft:rgba(76,201,255,.12);
+  --amber:#FFC15C; --amber-soft:rgba(255,193,92,.12);
+  --red:#FF5C7C; --red-soft:rgba(255,92,124,.13);
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  box-sizing:border-box;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{
+  margin:0;font-family:'Rajdhani',system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(ellipse 900px 500px at 12% -10%, rgba(44,244,214,.10), transparent 60%),
+    radial-gradient(ellipse 900px 600px at 100% 0%, rgba(155,123,255,.10), transparent 55%),
+    linear-gradient(var(--bg2),var(--bg2)) fixed,
+    repeating-linear-gradient(0deg, rgba(120,200,255,.035) 0 1px, transparent 1px 42px),
+    repeating-linear-gradient(90deg, rgba(120,200,255,.035) 0 1px, transparent 1px 42px);
+  background-attachment:fixed;
+}
+.mono{font-family:'JetBrains Mono',monospace}
+.wrap{max-width:1340px;margin:0 auto;padding:22px 22px 50px;display:flex;flex-direction:column;gap:18px}
+.disp{font-family:'Orbitron',sans-serif}
+
+/* generic panel scaffold — used by every section for consistent order */
+.panel{background:var(--surface);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 18px;border-bottom:1px solid var(--line)}
+.panel-head .tag{display:flex;align-items:center;gap:9px}
+.panel-head .tag span.ix{width:6px;height:6px;border-radius:1px;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.panel-head h2{font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;margin:0;color:var(--accent)}
+.panel-head .meta{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-soft)}
+.panel-body{padding:16px 18px}
+
+/* header */
+header{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;padding:20px 22px 20px;border:1px solid var(--line);border-radius:14px;background:var(--surface);backdrop-filter:blur(14px);box-shadow:0 0 0 1px rgba(44,244,214,.05),0 20px 60px -30px rgba(0,0,0,.7)}
+.brandmark{display:flex;align-items:center;gap:12px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px 2px var(--accent);animation:pulse 2.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+h1{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:700;margin:0;letter-spacing:.02em;color:#fff;text-shadow:0 0 18px rgba(44,244,214,.25)}
+.sub{color:var(--ink-soft);font-size:13px;margin-top:5px;letter-spacing:.02em}
+.hud{display:flex;gap:10px;flex-wrap:wrap}
+.hud-card{background:rgba(9,13,26,.6);border:1px solid var(--line);border-radius:10px;padding:9px 14px;min-width:120px}
+.hud-label{font-family:'JetBrains Mono',monospace;font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent)}
+.hud-val{font-size:15px;font-weight:600;margin-top:3px}
+.hud-val[contenteditable], .hud-edit{outline:none;border-bottom:1px dashed transparent;cursor:text}
+.hud-val[contenteditable]:hover{border-bottom-color:var(--line-strong)}
+.hud-val[contenteditable]:focus{border-bottom-color:var(--accent)}
+select.hud-select{font:inherit;font-weight:600;font-size:15px;border:none;background:transparent;color:var(--ink);padding:0;margin-top:2px;cursor:pointer}
+select.hud-select option{background:#0D1224;color:var(--ink)}
+
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line)}
+.kpi{background:var(--surface-solid);padding:16px 18px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent)}
+.kpi .n{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.01em;color:#fff}
+.kpi .l{font-family:'JetBrains Mono',monospace;font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);margin-top:6px}
+.kpi.accent .n{color:var(--accent);text-shadow:0 0 14px rgba(44,244,214,.35)}
+.kpi.amber .n{color:var(--amber);text-shadow:0 0 14px rgba(255,193,92,.3)}
+
+/* progress rings */
+.rings{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:6px}
+.ring-card{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 6px;border-radius:10px;transition:background .15s}
+.ring-card:hover{background:rgba(110,220,255,.05)}
+.ring-wrap{position:relative;width:82px;height:82px}
+.ring-svg{width:82px;height:82px;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:rgba(255,255,255,.06);stroke-width:5}
+.ring-fg{fill:none;stroke-width:5;stroke-linecap:round;filter:drop-shadow(0 0 4px currentColor)}
+.ring-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700}
+.ring-name{font-size:11px;font-weight:600;letter-spacing:.01em;text-align:center;max-width:138px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* toolbar */
+.tool-group{display:flex;flex-direction:column;gap:7px}
+.tool-group + .tool-group{padding-left:16px;margin-left:2px;border-left:1px solid var(--line)}
+.tool-label{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft)}
+.tool-row{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;cursor:pointer}
+.btn{background:rgba(16,22,40,.7);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 13px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:7px;letter-spacing:.02em;transition:border-color .15s,box-shadow .15s;white-space:nowrap}
+.btn:hover{border-color:var(--accent);box-shadow:0 0 14px -4px var(--accent)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--blue));color:#04140F;border-color:transparent;font-weight:700}
+.btn.primary:hover{box-shadow:0 0 22px -4px var(--accent)}
+.dropdown{position:relative}
+.menu{position:absolute;top:calc(100% + 6px);left:0;background:#0D1224;border:1px solid var(--line-strong);border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.5);min-width:170px;z-index:30;overflow:hidden;display:none}
+.menu.open{display:block}
+.menu button{width:100%;text-align:left;background:none;border:none;padding:10px 14px;font-size:13px;color:var(--ink)}
+.menu button:hover{background:var(--accent-soft);color:var(--accent)}
+#fileInput,#restoreInput{display:none}
+
+/* table */
+.tablewrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:1180px}
+thead th{position:sticky;top:0;background:#0A0F1F;color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:10px 12px;white-space:nowrap;border-bottom:1px solid var(--line-strong)}
+tbody td{padding:9px 12px;font-size:13px;border-top:1px solid var(--line);vertical-align:top}
+tbody tr:hover{background:rgba(44,244,214,.04)}
+td[contenteditable]{outline:none;min-width:90px}
+td[contenteditable]:focus{background:var(--accent-soft);border-radius:5px;box-shadow:0 0 0 1px var(--accent)}
+.badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;border:1px solid currentColor}
+.b-green{background:var(--accent-soft);color:var(--accent)}
+.b-blue{background:var(--blue-soft);color:var(--blue)}
+.b-amber{background:var(--amber-soft);color:var(--amber)}
+.b-red{background:var(--red-soft);color:var(--red)}
+.del{background:none;border:none;color:var(--ink-soft);font-size:16px;line-height:1;padding:2px 6px;border-radius:5px}
+.del:hover{background:var(--red-soft);color:var(--red)}
+.company-cell{font-weight:700;color:#fff}
+.mono-cell{font-family:'JetBrains Mono',monospace;font-size:11.5px}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(2,4,10,.75);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:40px 16px;overflow:auto}
+.overlay.open{display:flex}
+.modal{background:#0B0F1E;border-radius:14px;max-width:640px;width:100%;padding:26px 28px;border:1px solid var(--line-strong);box-shadow:0 0 60px -10px rgba(44,244,214,.15)}
+.modal h3{font-family:'Orbitron',sans-serif;margin:0 0 4px;font-size:16px;color:#fff}
+.modal .close{float:right;background:none;border:none;font-size:20px;color:var(--ink-soft)}
+.field{margin:14px 0}
+.field label{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;color:var(--accent);margin-bottom:5px;letter-spacing:.06em}
+.field select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#0D1224;color:var(--ink)}
+#reportBody{white-space:pre-wrap;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.65;background:#070A14;border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:10px;max-height:50vh;overflow:auto;color:#C9E9E2}
+
+footer{color:var(--ink-soft);font-size:11.5px;text-align:center;letter-spacing:.02em;padding-top:6px}
+footer .credit{margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-soft)}
+footer .credit b{color:var(--accent);font-weight:600}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.pname{width:150px}.tool-group + .tool-group{border-left:none;padding-left:0;margin-left:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brandmark">
+    <div>
+      <div style="display:flex;align-items:center;gap:9px"><span class="dot"></span><h1>PANEL&nbsp;DE&nbsp;ESTUDIOS // SISTEMAS DE GESTIÓN Y MARCA</h1></div>
+      <div class="sub mono">FONDONORMA · SEGUIMIENTO DE AUDITORÍAS 2026 · CAMPOS EDITABLES EN TIEMPO REAL</div>
+    </div>
+  </div>
+  <div class="hud">
+    <div class="hud-card"><div class="hud-label">Fecha</div><div class="hud-val" id="hudDate">—</div></div>
+    <div class="hud-card"><div class="hud-label">Hora</div><div class="hud-val mono" id="hudTime">—</div></div>
+    <div class="hud-card">
+      <div class="hud-label">Clima (manual)</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <select class="hud-select" id="climaIcon"><option>☀️</option><option>⛅</option><option selected>🌤️</option><option>🌧️</option><option>⛈️</option><option>🌫️</option></select>
+        <span class="hud-val" contenteditable="true" id="climaTxt">28°C, Maracaibo</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="panel">
+  <div class="panel-head"><div class="tag"><span class="ix"></span><h2>Métricas generales</h2></div><div class="meta mono" id="kpiMeta"></div></div>
+  <div class="kpis" id="kpiRow"></div>
+</div>
+
+<div class="panel">
+  <div class="panel-head"><div class="tag"><span class="ix"></span><h2>Avance por empresa</h2></div></div>
+  <div class="panel-body"><div id="progressList"></div></div>
+</div>
+
+<div class="panel">
+  <div class="panel-head"><div class="tag"><span class="ix"></span><h2>Operaciones</h2></div></div>
+  <div class="panel-body">
+    <div class="tool-row">
+      <div class="tool-group">
+        <span class="tool-label">Datos</span>
+        <div class="tool-row">
+          <button class="btn primary" onclick="document.getElementById('fileInput').click()">📤 Cargar Excel</button>
+          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+          <button class="btn" onclick="addRow()">➕ Agregar estudio</button>
+        </div>
+      </div>
+      <div class="tool-group">
+        <span class="tool-label">Exportar</span>
+        <div class="tool-row">
+          <div class="dropdown">
+            <button class="btn" onclick="toggleMenu('exportMenu')">⬇️ Descargar ▾</button>
+            <div class="menu" id="exportMenu">
+              <button onclick="exportExcel()">Excel (.xlsx)</button>
+              <button onclick="exportCSV()">CSV (.csv)</button>
+              <button onclick="exportPDF()">PDF (imprimir)</button>
+            </div>
+          </div>
+          <button class="btn" onclick="openReportModal()">📊 Informe por empresa</button>
+        </div>
+      </div>
+      <div class="tool-group">
+        <span class="tool-label">Respaldo</span>
+        <div class="tool-row">
+          <button class="btn" onclick="backupJSON()">💾 Guardar copia</button>
+          <button class="btn" onclick="document.getElementById('restoreInput').click()">📥 Restaurar copia</button>
+          <input type="file" id="restoreInput" accept=".json">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head"><div class="tag"><span class="ix"></span><h2>Registro de estudios</h2></div><div class="meta mono" id="tableMeta"></div></div>
+  <div class="tablewrap">
+<table id="dataTable">
+  <thead>
+    <tr>
+      <th>Empresa</th><th>Esquema</th><th>Fecha cotización</th><th>Pago</th>
+      <th>Fecha de auditoría</th><th>Mes de ejecución</th><th>Días planif.</th><th>Monto (USD)</th>
+      <th>Estado</th><th></th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+  </div>
+</div>
+
+
+<footer>
+  DATOS CARGADOS DE ESTUDIOS_2026.XLSX · EDITE CUALQUIER CELDA DIRECTAMENTE · LOS CAMBIOS SE GUARDAN EN ESTE NAVEGADOR
+  <div class="credit">⟡ Desarrollado por <b>Fernando Silva</b></div>
+</footer>
+</div>
+
+<!-- Modal informe -->
+<div class="overlay" id="reportOverlay">
+  <div class="modal">
+    <button class="close" onclick="closeReportModal()">×</button>
+    <h3>Informe de empresa</h3>
+    <div class="sub" style="color:var(--ink-soft);font-size:12.5px">Seleccione una empresa para generar su estado consolidado</div>
+    <div class="field">
+      <label>Empresa</label>
+      <select id="companySelect"></select>
+    </div>
+    <div id="reportBody">Seleccione una empresa arriba.</div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn primary" onclick="downloadReportTxt()">⬇️ Descargar informe (.txt)</button>
+      <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let DATA = [];
+const STORAGE_KEY = 'fondonorma_estudios_2026';
+const SEED = [{"empresa": "ALCAVE VENEZUELA, C.A.", "esquema": "PRODUCTO", "fechaCotizacion": "2026-09-18", "pago": "PENDIENTE", "fechaAuditoria": "PENDIENTE", "mesEjecucion": "", "diasPlanificados": "1.5", "monto": "1102.5"}, {"empresa": "ALCAVE VENEZUELA, C.A.", "esquema": "PRODUCTO", "fechaCotizacion": "2026-09-18", "pago": "PENDIENTE", "fechaAuditoria": "PENDIENTE", "mesEjecucion": "", "diasPlanificados": "1.5", "monto": "1102.5"}, {"empresa": "ALCAVE VENEZUELA, C.A.", "esquema": "PRODUCTO", "fechaCotizacion": "2026-09-18", "pago": "PENDIENTE", "fechaAuditoria": "PENDIENTE", "mesEjecucion": "", "diasPlanificados": "1.5", "monto": "1102.5"}, {"empresa": "ALCAVE VENEZUELA, C.A.", "esquema": "PRODUCTO", "fechaCotizacion": "2026-09-18", "pago": "PENDIENTE", "fechaAuditoria": "PENDIENTE", "mesEjecucion": "", "diasPlanificados": "1.5", "monto": "1102.5"}, {"empresa": "ALICANTO CONSULTING GROUP C.A.", "esquema": "ISO 9001:2015", "fechaCotizacion": "2026-08-21", "pago": "PAGO", "fechaAuditoria": "", "mesEjecucion": "", "diasPlanificados": "5.0", "monto": "3675.0"}, {"empresa": "AMUNDARAY INGENIERÍA GEOTÉCNICA, C.A.", "esquema": "ISO 9001:2015", "fechaCotizacion": "2026-07-15", "pago": "PENDIENTE", "fechaAuditoria": "", "mesEjecucion": "", "diasPlanificados": "4.0", "monto": "2940.0"}, {"empresa": "CORPORACIÓN JSL, C.A.", "esquema": "HACCP", "fechaCotizacion": "2026-08-18", "pago": "PAGÓ", "fechaAuditoria": "", "mesEjecucion": "", "diasPlanificados": "4.0", "monto": "2940.0"}, {"empresa": "G3 LOGÍSTICA, C.A.", "esquema": "ISO 9001:2015", "fechaCotizacion": "2026-08-25", "pago": "PAGO", "fechaAuditoria": "(ETAPA 1) \n18/08/2026", "mesEjecucion": "AGOSTO 2026", "diasPlanificados": "6.0", "monto": "4410.0"}, {"empresa": "GB CHEMPRO, C.A.", "esquema": "ISO 14001:2015", "fechaCotizacion": "2026-05-29", "pago": "PAGÓ", "fechaAuditoria": "(ETAPA 1) 24/08/2026 \n(ETAPA 2) DEL 25/08/2026 AL 28/08/2026", "mesEjecucion": "AGOSTO 2026", "diasPlanificados": "7.0", "monto": "4410.0"}, {"empresa": "INDUSTRIA ZULIANA DE ALIMENTOS, C.A.", "esquema": "ISO 22000:2018", "fechaCotizacion": "2026-01-27", "pago": "PAGÓ", "fechaAuditoria": "(ETAPA 1) 18/1/2026 \n(ETAPA 2) DEL 23/02/2026 AL 26/02/2026", "mesEjecucion": "ENERO 2026 \nFEBRERO 2026", "diasPlanificados": "5.0", "monto": "3650.0"}, {"empresa": "INDUSTRIAS METALÚRGICAS NACIONALES, C.A. (INMETCA)", "esquema": "ISO 9001:2015", "fechaCotizacion": "2026-02-05", "pago": "PAGÓ", "fechaAuditoria": "", "mesEjecucion": "", "diasPlanificados": "2.5", "monto": "1750.0"}, {"empresa": "INDUSTRIAS METALÚRGICAS NACIONALES, C.A. (INMETCA)", "esquema": "ISO 9001:2015", "fechaCotizacion": "2026-02-05", "pago": "PAGÓ", "fechaAuditoria": "", "mesEjecucion": "", "diasPlanificados": "2.5", "monto": "1750.0"}, {"empresa": "INDUSTRIAS Q20, C.A.", "esquema": "PRODUCTO", "fechaCotizacion": "2026-01-23", "pago": "PAGÓ", "fechaAuditoria": "DEL 24/02/2026 AL 26/02/2026", "mesEjecucion": "FEBRERO 2026", "diasPlanificados": "1.33", "monto": "1020.0"}, {"empresa": "INDUSTRIAS Q20, C.A.", "esquema": "PRODUCTO", "fechaCotizacion": "2026-01-23", "pago": "PAGÓ", "fechaAuditoria": "DEL 24/02/2026 AL 26/02/2026", "mesEjecucion": "FEBRERO 2026", "diasPlanificados": "1.33", "monto": "1020.0"}, {"empresa": "INDUSTRIAS Q20, C.A.", "esquema": "PRODUCTO", "fechaCotizacion": "2026-01-23", "pago": "PAGÓ", "fechaAuditoria": "DEL 24/02/2026 AL 26/02/2026", "mesEjecucion": "FEBRERO 2026", "diasPlanificados": "1.33", "monto": "1020.0"}, {"empresa": "INTERAMERICANA DE CABLES, S.A.", "esquema": "ISO 9001:2015", "fechaCotizacion": "2026-03-03", "pago": "PAGÓ", "fechaAuditoria": "(ETAPA 1)  DEL 24/03/2026 AL 27/03/2026\n(ETAPA 2) DEL 11/05/2026 AL 14/05/2026", "mesEjecucion": "MARZO 2026 \nMAYO 2026", "diasPlanificados": "7.0", "monto": "4900.0"}, {"empresa": "INTERAMERICANA DE CABLES, S.A.", "esquema": "ISO 14001:2015", "fechaCotizacion": "2026-03-03", "pago": "PAGÓ", "fechaAuditoria": "(ETAPA 1)  DEL 24/03/2026 AL 27/03/2026\n(ETAPA 2) DEL 11/05/2026 AL 14/05/2026", "mesEjecucion": "MARZO 2026 \nMAYO 2026", "diasPlanificados": "6.0", "monto": "4200.0"}, {"empresa": "LABORATORIO COFASA, S.A.", "esquema": "ISO 9001:2015", "fechaCotizacion": "2026-07-09", "pago": "PAGÓ", "fechaAuditoria": "(ETAPA 1) 04/08/2026 \n(ETAPA 2) DEL 27/08/2026 AL 28/08/2026 & DEL 31/08/2026 AL 04/09/2026", "mesEjecucion": "AGOSTO 2026 \nSEPTIEMBRE 2026", "diasPlanificados": "4.0", "monto": "2940.0"}, {"empresa": "PDVSA PETRÓLEO, S.A. (PLANTA CARDÓN)", "esquema": "PRODUCTO", "fechaCotizacion": "2026-04-06", "pago": "PENDIENTE", "fechaAuditoria": "DEL 28/0/2026 AL 30/07/2026", "mesEjecucion": "JULIO 2026", "diasPlanificados": "0.3", "monto": "220.5"}, {"empresa": "PUROLOMO, C.A.", "esquema": "ISO 9001:2026", "fechaCotizacion": "2025-09-21", "pago": "PENDIENTE", "fechaAuditoria": "PENDIENTE", "mesEjecucion": "PENDIENTE", "diasPlanificados": "3.0", "monto": "2150.0"}, {"empresa": "PUROLOMO, C.A.", "esquema": "ISO 9001:2015", "fechaCotizacion": "2026-04-20", "pago": "PENDIENTE", "fechaAuditoria": "(ETAPA 1) 01/06/2026 \n(ETAPA 2) DEL 27/07/2026 AL 31/07/2026", "mesEjecucion": "JUNIO \nJULIO", "diasPlanificados": "6.0", "monto": "4350.0"}, {"empresa": "PUROLOMO, C.A.", "esquema": "PRODUCTO", "fechaCotizacion": "2026-05-27", "pago": "PENDIENTE", "fechaAuditoria": "", "mesEjecucion": "", "diasPlanificados": "10.0", "monto": "7350.0"}, {"empresa": "VICSON, S.A.", "esquema": "ISO 37001:2025", "fechaCotizacion": "2026-08-24", "pago": "PENDIENTE", "fechaAuditoria": "", "mesEjecucion": "", "diasPlanificados": "6.0", "monto": "4410.0"}, {"empresa": "VICSON, S.A.", "esquema": "ISO 50001:2018", "fechaCotizacion": "2026-08-24", "pago": "PENDIENTE", "fechaAuditoria": "", "mesEjecucion": "", "diasPlanificados": "9.0", "monto": "6615.0"}, {"empresa": "ZOOTEK, C.A.", "esquema": "ISO 9001:2015", "fechaCotizacion": "2026-05-21", "pago": "PAGÓ", "fechaAuditoria": "(ETAPA 1) 11/06/2026 \n(ETAPA 2) DEL 18/06/2026 AL 19/06/2026", "mesEjecucion": "JUNIO 2026", "diasPlanificados": "3.0", "monto": "2100.0"}];
+
+let downloadsCap = null;
+(async()=>{ try{ downloadsCap = await claude.use('downloads'); }catch(e){ downloadsCap = null; } })();
+
+async function saveFile(filename, data){
+  if(!downloadsCap){ try{ downloadsCap = await claude.use('downloads'); }catch(e){} }
+  if(!downloadsCap){
+    alert('La descarga no está disponible en esta vista. Abre el panel publicado en claude.ai para poder descargar archivos.');
+    return;
+  }
+  try{
+    await downloadsCap.save({filename, data});
+  }catch(err){
+    const code = err && err.code;
+    if(code==='declined'){ /* el usuario canceló, no hacer nada */ }
+    else if(code==='rate_limited'){ alert('Ya hay una descarga en curso, inténtalo de nuevo en un momento.'); }
+    else { alert('No se pudo guardar el archivo: '+(err && err.message ? err.message : 'error desconocido')); }
+  }
+}
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    DATA = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(SEED));
+  }catch(e){ DATA = JSON.parse(JSON.stringify(SEED)); }
+}
+function saveData(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA)); }catch(e){}
+}
+
+const MESES = {enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,octubre:10,noviembre:11,diciembre:12};
+const NOW = new Date(); // fecha real del navegador
+function monthsIn(str){
+  if(!str) return [];
+  const low = str.toLowerCase();
+  const out = [];
+  for(const m in MESES){ if(low.includes(m)) out.push(MESES[m]); }
+  return out;
+}
+function estadoDe(r){
+  const cot = !!(r.fechaCotizacion && r.fechaCotizacion.trim());
+  const pagoTxt = (r.pago||'').toUpperCase();
+  const pagado = pagoTxt.includes('PAG') && !pagoTxt.includes('PEND');
+  const fa = (r.fechaAuditoria||'').trim();
+  const programada = !!fa && fa.toUpperCase() !== 'PENDIENTE';
+  const meses = monthsIn(r.mesEjecucion);
+  let ejecutada = false;
+  if(programada && meses.length){
+    const y = NOW.getFullYear()===2026 ? 2026 : NOW.getFullYear();
+    const curIdx = (NOW.getFullYear()>y)?13:(NOW.getFullYear()<y?0:NOW.getMonth()+1);
+    ejecutada = Math.max(...meses) < curIdx || (Math.max(...meses)===curIdx && NOW.getDate()>25);
+  }
+  const stages = [cot,pagado,programada,ejecutada].filter(Boolean).length;
+  const pct = Math.round(stages/4*100);
+  let label,cls;
+  if(ejecutada){label='Auditoría ejecutada';cls='b-green';}
+  else if(programada){label='Auditoría programada';cls='b-blue';}
+  else if(pagado){label='Pago confirmado — por programar';cls='b-amber';}
+  else {label='Pendiente de pago';cls='b-red';}
+  return {pct,label,cls,pagado,programada,ejecutada,cot};
+}
+
+function fmtMoney(v){ const n=parseFloat(v)||0; return '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function renderKPIs(){
+  const empresas = new Set(DATA.map(r=>r.empresa.trim().toUpperCase()));
+  const totalMonto = DATA.reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
+  const totalDias = DATA.reduce((s,r)=>s+(parseFloat(r.diasPlanificados)||0),0);
+  const pagados = DATA.filter(r=>{const t=(r.pago||'').toUpperCase();return t.includes('PAG')&&!t.includes('PEND');}).length;
+  const avgPct = Math.round(DATA.reduce((s,r)=>s+estadoDe(r).pct,0)/(DATA.length||1));
+  const ejecutadas = DATA.filter(r=>estadoDe(r).ejecutada).length;
+  const cards = [
+    {n:empresas.size,l:'Empresas',cls:''},
+    {n:DATA.length,l:'Estudios totales',cls:''},
+    {n:pagados+' / '+DATA.length,l:'Pagos confirmados',cls:'accent'},
+    {n:ejecutadas,l:'Auditorías ejecutadas',cls:'accent'},
+    {n:fmtMoney(totalMonto),l:'Monto total (USD)',cls:''},
+    {n:avgPct+'%',l:'Avance promedio',cls:'amber'},
+  ];
+  document.getElementById('kpiRow').innerHTML = cards.map(c=>`<div class="kpi ${c.cls}"><div class="n">${c.n}</div><div class="l">${c.l}</div></div>`).join('');
+  document.getElementById('kpiMeta').textContent = 'ACTUALIZADO ' + new Date().toLocaleTimeString('es-VE');
+}
+
+function renderProgress(){
+  const byCo = {};
+  DATA.forEach(r=>{
+    const k = r.empresa.trim() || '(sin nombre)';
+    if(!byCo[k]) byCo[k]=[];
+    byCo[k].push(estadoDe(r).pct);
+  });
+  const R = 30, C = +(2*Math.PI*R).toFixed(2);
+  const cards = Object.keys(byCo).sort().map(k=>{
+    const avg = Math.round(byCo[k].reduce((a,b)=>a+b,0)/byCo[k].length);
+    const color = avg>=100?'var(--accent)':avg>=50?'var(--blue)':avg>=25?'var(--amber)':'var(--red)';
+    const offset = (C - (avg/100)*C).toFixed(2);
+    return `<div class="ring-card" title="${k}">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 72 72" class="ring-svg">
+          <circle cx="36" cy="36" r="${R}" class="ring-bg"/>
+          <circle cx="36" cy="36" r="${R}" class="ring-fg" style="stroke:${color};stroke-dasharray:${C};stroke-dashoffset:${offset}"/>
+        </svg>
+        <div class="ring-pct" style="color:${color}">${avg}%</div>
+      </div>
+      <div class="ring-name">${k}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('progressList').innerHTML = `<div class="rings">${cards}</div>`;
+}
+
+function cell(val, idx, field, extraClass){
+  const safe = (val??'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  return `<td class="${extraClass||''}" contenteditable="true" data-idx="${idx}" data-field="${field}">${safe}</td>`;
+}
+
+function renderTable(){
+  document.getElementById('tableMeta').textContent = DATA.length + ' REGISTROS';
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = DATA.map((r,i)=>{
+    const e = estadoDe(r);
+    return `<tr>
+      ${cell(r.empresa,i,'empresa','company-cell')}
+      ${cell(r.esquema,i,'esquema')}
+      ${cell(r.fechaCotizacion,i,'fechaCotizacion','mono-cell')}
+      ${cell(r.pago,i,'pago')}
+      ${cell(r.fechaAuditoria,i,'fechaAuditoria')}
+      ${cell(r.mesEjecucion,i,'mesEjecucion')}
+      ${cell(r.diasPlanificados,i,'diasPlanificados','mono-cell')}
+      ${cell(r.monto,i,'monto','mono-cell')}
+      <td><span class="badge ${e.cls}">${e.label} · ${e.pct}%</span></td>
+      <td><button class="del" onclick="delRow(${i})" title="Eliminar fila">✕</button></td>
+    </tr>`;
+  }).join('');
+  tbody.querySelectorAll('td[contenteditable]').forEach(td=>{
+    td.addEventListener('blur', e=>{
+      const idx = +td.dataset.idx, field = td.dataset.field;
+      DATA[idx][field] = td.textContent.trim();
+      saveData(); renderKPIs(); renderProgress(); renderCompanySelect();
+      const tr = td.parentElement;
+      const badge = tr.querySelector('.badge');
+      const est = estadoDe(DATA[idx]);
+      badge.className = 'badge '+est.cls;
+      badge.textContent = est.label+' · '+est.pct+'%';
+    });
+  });
+}
+
+function addRow(){
+  DATA.push({empresa:'NUEVA EMPRESA, C.A.',esquema:'ISO 9001:2015',fechaCotizacion:new Date().toISOString().slice(0,10),pago:'PENDIENTE',fechaAuditoria:'',mesEjecucion:'',diasPlanificados:'0',monto:'0'});
+  saveData(); renderAll();
+}
+function delRow(i){ DATA.splice(i,1); saveData(); renderAll(); }
+
+function toggleMenu(id){
+  document.querySelectorAll('.menu').forEach(m=>{ if(m.id!==id) m.classList.remove('open'); });
+  document.getElementById(id).classList.toggle('open');
+}
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.dropdown')) document.querySelectorAll('.menu').forEach(m=>m.classList.remove('open'));
+});
+
+const HEADERS = ['EMPRESA','ESQUEMA','FECHA COTIZACION APROBADA','PAGO','FECHA DE REALIZACION DE AUDITORIA','FECHA DE EJECUCION DE AUDITORIA (MES)','N° DE DIAS DE AUDITORIA PLANIFICADOS','MONTO (USD)'];
+function toRows(){ return DATA.map(r=>[r.empresa,r.esquema,r.fechaCotizacion,r.pago,r.fechaAuditoria,r.mesEjecucion,r.diasPlanificados,r.monto]); }
+
+async function exportExcel(){
+  toggleMenu('exportMenu');
+  const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...toRows()]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Estudios 2026');
+  const arrbuf = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+  const blob = new Blob([arrbuf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  await saveFile('estudios_fondonorma_2026.xlsx', blob);
+}
+async function exportCSV(){
+  toggleMenu('exportMenu');
+  const rows = [HEADERS, ...toRows()];
+  const csv = rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'});
+  await saveFile('estudios_fondonorma_2026.csv', blob);
+}
+function exportPDF(){ toggleMenu('exportMenu'); window.print(); }
+
+document.getElementById('fileInput').addEventListener('change', e=>{
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    try{
+      const wb = XLSX.read(ev.target.result, {type:'array', cellDates:true});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      let headerRow = 0;
+      for(let i=0;i<Math.min(rows.length,4);i++){ if(rows[i].some(c=>String(c).toUpperCase().includes('EMPRESA'))){headerRow=i;break;} }
+      const body = rows.slice(headerRow+1).filter(r=>r[0] && String(r[0]).trim());
+      const parsed = body.map(r=>({
+        empresa:String(r[0]||'').trim(), esquema:String(r[1]||'').trim(),
+        fechaCotizacion: r[2] instanceof Date ? r[2].toISOString().slice(0,10) : String(r[2]||'').trim(),
+        pago:String(r[3]||'').trim(), fechaAuditoria:String(r[4]||'').trim(),
+        mesEjecucion:String(r[5]||'').trim(), diasPlanificados:String(r[6]||'').trim(), monto:String(r[7]||'').trim()
+      })).filter(r=>!r.empresa.toUpperCase().includes('TOTAL'));
+      if(parsed.length){ DATA = parsed; saveData(); renderAll(); alert('Excel cargado: '+parsed.length+' estudios importados.'); }
+      else alert('No se encontraron filas reconocibles en el archivo.');
+    }catch(err){ alert('No se pudo leer el archivo: '+err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value='';
+});
+
+function renderCompanySelect(){
+  const sel = document.getElementById('companySelect');
+  const names = [...new Set(DATA.map(r=>r.empresa.trim()))].sort();
+  sel.innerHTML = '<option value="">— seleccione —</option>' + names.map(n=>`<option>${n}</option>`).join('');
+}
+function openReportModal(){ document.getElementById('reportOverlay').classList.add('open'); }
+function closeReportModal(){ document.getElementById('reportOverlay').classList.remove('open'); }
+document.getElementById('companySelect').addEventListener('change', buildReport);
+function buildReport(){
+  const name = document.getElementById('companySelect').value;
+  const box = document.getElementById('reportBody');
+  if(!name){ box.textContent='Seleccione una empresa arriba.'; return; }
+  const recs = DATA.filter(r=>r.empresa.trim()===name);
+  const totalMonto = recs.reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
+  const totalDias = recs.reduce((s,r)=>s+(parseFloat(r.diasPlanificados)||0),0);
+  const avg = Math.round(recs.reduce((s,r)=>s+estadoDe(r).pct,0)/recs.length);
+  let out = `INFORME DE ESTADO — ${name}\n`;
+  out += `Generado: ${new Date().toLocaleString('es-VE')}\n`;
+  out += `${'─'.repeat(50)}\n`;
+  out += `Esquemas activos: ${recs.length}\n`;
+  out += `Avance consolidado: ${avg}%\n`;
+  out += `Monto total: ${fmtMoney(totalMonto)}\n`;
+  out += `Días de auditoría planificados: ${totalDias}\n`;
+  out += `${'─'.repeat(50)}\n\n`;
+  recs.forEach((r,i)=>{
+    const e = estadoDe(r);
+    out += `${i+1}. ${r.esquema}\n`;
+    out += `   Estado: ${e.label} (${e.pct}%)\n`;
+    out += `   Fecha cotización: ${r.fechaCotizacion||'—'}\n`;
+    out += `   Pago: ${r.pago||'—'}\n`;
+    out += `   Fecha de auditoría: ${r.fechaAuditoria||'—'}\n`;
+    out += `   Mes de ejecución: ${r.mesEjecucion||'—'}\n`;
+    out += `   Días planificados: ${r.diasPlanificados||'—'}\n`;
+    out += `   Monto: ${fmtMoney(r.monto)}\n\n`;
+  });
+  box.textContent = out;
+}
+async function downloadReportTxt(){
+  const name = document.getElementById('companySelect').value;
+  if(!name){ alert('Seleccione una empresa primero.'); return; }
+  const blob = new Blob([document.getElementById('reportBody').textContent], {type:'text/plain;charset=utf-8'});
+  await saveFile(`informe_${name.replace(/[^a-z0-9]+/gi,'_')}.txt`, blob);
+}
+
+async function backupJSON(){
+  const blob = new Blob([JSON.stringify(DATA, null, 2)], {type:'application/json'});
+  const stamp = new Date().toISOString().slice(0,10);
+  await saveFile(`backup_estudios_fondonorma_${stamp}.json`, blob);
+}
+document.getElementById('restoreInput').addEventListener('change', e=>{
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    try{
+      const parsed = JSON.parse(ev.target.result);
+      if(!Array.isArray(parsed) || !parsed.length) throw new Error('El archivo no contiene una lista de estudios válida.');
+      DATA = parsed; saveData(); renderAll();
+      alert('Copia de seguridad restaurada: '+parsed.length+' estudios cargados.');
+    }catch(err){ alert('No se pudo restaurar el archivo: '+err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+});
+
+function tick(){
+  const d = new Date();
+  document.getElementById('hudDate').textContent = d.toLocaleDateString('es-VE',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('hudTime').textContent = d.toLocaleTimeString('es-VE');
+}
+setInterval(tick,1000);
+
+function renderAll(){ renderKPIs(); renderProgress(); renderTable(); renderCompanySelect(); }
+loadData(); renderAll(); tick();
+</script>
+</body>
+</html>
